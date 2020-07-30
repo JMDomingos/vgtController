@@ -1,0 +1,72 @@
+int   inputMaxBoostPotPin            = A0;    // set input pin for the potentiometer
+int   inputAnalogMAPSensorPin        = A3;    // set input pin for the MAP sensor
+
+int   solenoidPin                    = 3;     // set output pin for the solenoid
+
+int   dutyCycle                      = 250;
+int   dutyCycleSteps                 = 1;     // Instead of increasing 1 by 1
+
+int   inputMaxBoostValue             = 0;     // potentiometer input variable
+float MaxBoostValue                  = 0.50;  // potentiometer value store
+float MaxBoostValueLimit             = 0.99;
+
+int   inputAnalogMAPSensorValue      = 0;     // MAP sensor input variable
+float startupMAPReading              = 0.00;  // MAP reading at startup to store zero bar value
+float MAPSensorValue                 = 0.00;
+
+void setup() {
+  pinMode(solenoidPin, OUTPUT);               // declare the solenoidPin as an OUTPUT:
+  
+  startupMAPReading = analogRead(inputAnalogMAPSensorPin);
+  
+  Serial.begin(9600);
+}
+
+void loop() {
+  inputMaxBoostValue = analogRead(inputMaxBoostPotPin);  //Gets maxBoostValue from pot
+  MaxBoostValue = (inputMaxBoostValue / 1023.00) + 0.50;
+
+  for(int y=0;y<100;y++) {   // Correr aqui dentro para evitar fazer td constantemente
+    inputAnalogMAPSensorValue = analogRead(inputAnalogMAPSensorPin);    // fetch MAP
+    MAPSensorValue = findBoostFromVoltage(inputAnalogMAPSensorValue);
+    
+    if(MAPSensorValue >= MaxBoostValueLimit)
+      lowerDutyCycle();                                 // Lower dutyCycle if above maximum defined level
+    
+    if(MAPSensorValue >= MaxBoostValue)
+      lowerDutyCycle();                                 // Lower dutyCycle if above potentiometer defined level
+    
+    if(dutyCycle < (255 - dutyCycleSteps) && MAPSensorValue < MaxBoostValue)
+      increaseDutyCycle();
+    
+    Serial.println(" ");
+    Serial.println(" ");
+    Serial.println(" ");
+    
+    Serial.print("SelectedMaxBoost: ");
+    Serial.println(MaxBoostValue);
+    Serial.print("MAP(Bar):         ");
+    Serial.println(MAPSensorValue);
+    Serial.print("PWM Duty Cycle:   ");
+    Serial.println(dutyCycle);
+    
+    delay(100);
+  }
+}
+
+float findBoostFromVoltage(int voltage) {
+  int tempVoltage = (voltage - startupMAPReading);
+  float boost = (tempVoltage / 400.00);
+  
+  return boost;
+}
+
+void increaseDutyCycle() {
+  dutyCycle = dutyCycle + dutyCycleSteps;
+  analogWrite(solenoidPin, dutyCycle);
+}
+
+void lowerDutyCycle() {
+  dutyCycle = dutyCycle - dutyCycleSteps;
+  analogWrite(solenoidPin, dutyCycle);
+}
