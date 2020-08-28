@@ -7,12 +7,12 @@ int   solenoidPin                     = 3;                    // set output pin 
 int   inputHiPowerValue               = 0;
 
 int   dutyCycle                       = 45;                   // current PWM value
-int   dutyCycleSteps                  = 5;                   // Instead of increasing 1 by 1
+int   dutyCycleSteps                  = 5;                    // Instead of increasing 1 by 1
 
 // TODO: Must be tested to get these values 
 int   minDutyCycle                    = 45;                   // start of end of turbo actuator movement
-int   minMaxDutyCycle                 = 60;                  // start of end of turbo actuator movement
-int   maxMaxDutyCycle                 = 75;                  // end end of turbo actuator movement
+int   minMaxDutyCycle                 = 60;                   // start of end of turbo actuator movement
+int   maxMaxDutyCycle                 = 75;                   // end end of turbo actuator movement
 int   maxDutyCycle                    = minMaxDutyCycle;      // start value of turbo actuator movement
 
 int   inputMaxBoostValue              = 0;                    // potentiometer input variable
@@ -39,20 +39,18 @@ void loop() {
   // TODO: Fazer aqui o inputHiPowerValue para desativar se os 2 pots forem 0
   maxDutyCycle = setMaxDutyCycleFromPot();                                // Set DutyCycle range from pot
   MAPSensorValue = fetchMAP();                                            // fetch MAP
-  
-  // Returns 1 to 15 (or above, boost related), depending on map to max diference - alterado para 5 e x/3 para esta versão
-  if(MAPSensorValue < MaxBoostValue) dutyCycleSteps = (int) (((MaxBoostValue - MAPSensorValue) * 10) / 3);
-  else dutyCycleSteps = 5;
-  
 
   if(MAPSensorValue > MaxBoostValueLimit || MAPSensorValue > MaxBoostValue) {
     // Lower dutyCycle until below maximum defined level and potentiometer level
     do {
+      dutyCycleSteps = 1;
       dutyCycle = dutyCycle - dutyCycleSteps;
       MAPSensorValue = fetchMAP();
     } while (MAPSensorValue > MaxBoostValue);
   } else {
     if(MAPSensorValue < MaxBoostValueLimit && MAPSensorValue <= MaxBoostValue) {
+      // Returns 1 to 5 (boost related), depending on map to max diference
+      dutyCycleSteps = (int) (((MaxBoostValue - MAPSensorValue) * 10) / 3);
       dutyCycle = dutyCycle + dutyCycleSteps;
     }
   }
@@ -65,7 +63,7 @@ void loop() {
   if(dutyCycle>=minDutyCycle && dutyCycle<=maxMaxDutyCycle) 
     analogWrite(solenoidPin, dutyCycle);
   
-  // TODO: Fazer isto depois de testar
+  // TODO: Ver como fazer isto depois de testar
   //if(inputHiPowerValue == 1023) 
   debug();
 }
